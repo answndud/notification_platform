@@ -40,6 +40,12 @@ public class DeliveryTask {
     @Column(name = "max_retry", nullable = false)
     private int maxRetry;
 
+    @Column(name = "backoff_base_sec", nullable = false)
+    private int backoffBaseSec;
+
+    @Column(name = "force_fail", nullable = false)
+    private boolean forceFail;
+
     @Column(name = "next_retry_at")
     private LocalDateTime nextRetryAt;
 
@@ -52,7 +58,15 @@ public class DeliveryTask {
     protected DeliveryTask() {
     }
 
-    private DeliveryTask(Long requestId, Long receiverId, String channel, String priority, int maxRetry) {
+    private DeliveryTask(
+            Long requestId,
+            Long receiverId,
+            String channel,
+            String priority,
+            int maxRetry,
+            int backoffBaseSec,
+            boolean forceFail
+    ) {
         this.requestId = requestId;
         this.receiverId = receiverId;
         this.channel = channel;
@@ -60,24 +74,58 @@ public class DeliveryTask {
         this.status = DeliveryTaskStatus.PENDING;
         this.retryCount = 0;
         this.maxRetry = maxRetry;
+        this.backoffBaseSec = backoffBaseSec;
+        this.forceFail = forceFail;
         this.createdAt = LocalDateTime.now();
     }
 
-    public static DeliveryTask create(Long requestId, Long receiverId, String channel, String priority, int maxRetry) {
-        return new DeliveryTask(requestId, receiverId, channel, priority, maxRetry);
+    public static DeliveryTask create(
+            Long requestId,
+            Long receiverId,
+            String channel,
+            String priority,
+            int maxRetry,
+            int backoffBaseSec,
+            boolean forceFail
+    ) {
+        return new DeliveryTask(requestId, receiverId, channel, priority, maxRetry, backoffBaseSec, forceFail);
     }
 
     public void markSending() {
+        if (this.status != DeliveryTaskStatus.PENDING && this.status != DeliveryTaskStatus.FAILED) {
+            throw new IllegalStateException("Invalid transition to SENDING from " + this.status);
+        }
         this.status = DeliveryTaskStatus.SENDING;
     }
 
     public void markSent() {
+        if (this.status != DeliveryTaskStatus.SENDING) {
+            throw new IllegalStateException("Invalid transition to SENT from " + this.status);
+        }
         this.status = DeliveryTaskStatus.SENT;
         this.sentAt = LocalDateTime.now();
+        this.nextRetryAt = null;
     }
 
-    public void markFailed() {
+    public void markFailed(LocalDateTime nextRetryAt) {
+        if (this.status != DeliveryTaskStatus.SENDING) {
+            throw new IllegalStateException("Invalid transition to FAILED from " + this.status);
+        }
+        this.retryCount += 1;
+        this.nextRetryAt = nextRetryAt;
         this.status = DeliveryTaskStatus.FAILED;
+    }
+
+    public void markDlq() {
+        if (this.status != DeliveryTaskStatus.FAILED) {
+            throw new IllegalStateException("Invalid transition to DLQ from " + this.status);
+        }
+        this.status = DeliveryTaskStatus.DLQ;
+        this.nextRetryAt = null;
+    }
+
+    public boolean shouldMoveToDlq() {
+        return retryCount >= maxRetry;
     }
 
     public Long getId() {
@@ -94,5 +142,33 @@ public class DeliveryTask {
 
     public String getChannel() {
         return channel;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public DeliveryTaskStatus getStatus() {
+        return status;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public int getMaxRetry() {
+        return maxRetry;
+    }
+
+    public int getBackoffBaseSec() {
+        return backoffBaseSec;
+    }
+
+    public boolean isForceFail() {
+        return forceFail;
+    }
+
+    public LocalDateTime getNextRetryAt() {
+        return nextRetryAt;
     }
 }

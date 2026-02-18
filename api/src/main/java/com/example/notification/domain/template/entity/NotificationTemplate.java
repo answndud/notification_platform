@@ -36,4 +36,8 @@ public class NotificationTemplate {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    public String getEventType() {
+        return eventType;
+    }
 }

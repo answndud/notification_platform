@@ -7,6 +7,7 @@ public record NotificationRequestQueuedEvent(
         Long requestId,
         String requestKey,
         String templateCode,
+        String eventType,
         String priority,
         List<Long> receiverIds,
         Map<String, Object> variables

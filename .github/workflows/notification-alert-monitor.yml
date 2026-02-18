@@ -1,0 +1,52 @@
+name: Notification Alert Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Send external alerts when false"
+        required: false
+        type: choice
+        options: ["true", "false"]
+        default: "true"
+      metrics_url:
+        description: "Metrics endpoint URL override"
+        required: false
+        type: string
+      test_payload:
+        description: "Optional JSON payload to bypass metrics fetch"
+        required: false
+        type: string
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run alert monitor
+        env:
+          NOTIFICATION_METRICS_URL: ${{ secrets.NOTIFICATION_METRICS_URL }}
+          NOTIFICATION_ALERT_SLACK_WEBHOOK: ${{ secrets.NOTIFICATION_ALERT_SLACK_WEBHOOK }}
+          NOTIFICATION_ALERT_PAGERDUTY_KEY: ${{ secrets.NOTIFICATION_ALERT_PAGERDUTY_KEY }}
+          ALERT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          ALERT_TEST_PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_payload || '' }}
+          LAG_WARN_THRESHOLD: "100"
+          LAG_CRITICAL_THRESHOLD: "1000"
+          FAILED_WARN_THRESHOLD: "200"
+          DLQ_WARN_THRESHOLD: "100"
+        run: |
+          chmod +x scripts/*.sh
+          URL="${NOTIFICATION_METRICS_URL:-http://localhost:8080/api/v1/notifications/metrics}"
+          if [ -n "${{ github.event_name == 'workflow_dispatch' && inputs.metrics_url || '' }}" ]; then
+            URL="${{ github.event_name == 'workflow_dispatch' && inputs.metrics_url || '' }}"
+          fi
+          ./scripts/run_alert_monitor.sh "$URL"

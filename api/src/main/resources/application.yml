@@ -21,6 +21,8 @@ notification:
   kafka:
     topics:
       request-queued: notification.request.queued.v1
+    monitor:
+      worker-group-id: notification-worker
 
 logging:
   level:
