@@ -43,13 +43,15 @@ public class NotificationRequestService {
 
     @Transactional
     public NotificationRequestResponse create(NotificationRequestCreateRequest command) {
+        String normalizedRequestKey = ApiInputNormalizer.normalizeRequiredRequestKey(command.requestKey());
+        String normalizedTemplateCode = ApiInputNormalizer.normalizeRequiredTemplateCode(command.templateCode());
         String normalizedPriority = ApiInputNormalizer.normalizeRequiredPriority(command.priority());
         validateReceiverIds(command.receiverIds());
 
-        if (requestRepository.existsByRequestKey(command.requestKey())) {
+        if (requestRepository.existsByRequestKey(normalizedRequestKey)) {
             throw new BusinessException(ErrorCode.DUPLICATE_REQUEST_KEY);
         }
-        NotificationTemplate template = templateRepository.findByTemplateCode(command.templateCode())
+        NotificationTemplate template = templateRepository.findByTemplateCode(normalizedTemplateCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEMPLATE_NOT_FOUND));
         long activeReceiverCount = receiverRepository.countByIdInAndActiveTrue(command.receiverIds());
         if (activeReceiverCount != command.receiverIds().size()) {
@@ -57,8 +59,8 @@ public class NotificationRequestService {
         }
 
         NotificationRequest request = NotificationRequest.create(
-                command.requestKey(),
-                command.templateCode(),
+                normalizedRequestKey,
+                normalizedTemplateCode,
                 normalizedPriority
         );
         requestRepository.save(request);
@@ -83,12 +85,25 @@ public class NotificationRequestService {
         return NotificationRequestResponse.from(request);
     }
 
-    public NotificationRequestListResponse list(String status, int page, int size) {
+    public NotificationRequestResponse getByRequestKey(String requestKey) {
+        String normalizedRequestKey = ApiInputNormalizer.normalizeRequiredRequestKey(requestKey);
+        NotificationRequest request = requestRepository.findByRequestKey(normalizedRequestKey)
+                .orElseThrow(() -> new BusinessException(ErrorCode.REQUEST_NOT_FOUND));
+        return NotificationRequestResponse.from(request);
+    }
+
+    public NotificationRequestListResponse list(String status, String priority, String requestKey, int page, int size) {
         Pageable pageable = PageableFactory.of(page, size);
-        NotificationRequestStatus requestStatus = parseStatus(status);
-        Page<NotificationRequest> requests = requestStatus == null
-                ? requestRepository.findAll(pageable)
-                : requestRepository.findByStatus(requestStatus, pageable);
+        NotificationRequestStatus requestStatus = ApiInputNormalizer.normalizeOptionalEnum(status, NotificationRequestStatus.class);
+        String normalizedPriority = ApiInputNormalizer.normalizeOptionalPriority(priority);
+        String normalizedRequestKey = ApiInputNormalizer.normalizeOptionalRequestKey(requestKey);
+        String escapedRequestKey = ApiInputNormalizer.escapeLikePattern(normalizedRequestKey);
+        Page<NotificationRequest> requests = requestRepository.findWithFilters(
+                requestStatus,
+                normalizedPriority,
+                escapedRequestKey,
+                pageable
+        );
 
         return new NotificationRequestListResponse(
                 requests.getContent().stream().map(NotificationRequestResponse::from).toList(),
@@ -97,17 +112,6 @@ public class NotificationRequestService {
                 requests.getTotalElements(),
                 requests.getTotalPages()
         );
-    }
-
-    private NotificationRequestStatus parseStatus(String status) {
-        if (status == null || status.isBlank()) {
-            return null;
-        }
-        try {
-            return NotificationRequestStatus.valueOf(status.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
     }
 
     private void validateReceiverIds(List<Long> receiverIds) {

@@ -8,6 +8,7 @@ public enum ErrorCode {
     TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "N404_TEMPLATE", "알림 템플릿을 찾을 수 없습니다."),
     RECEIVER_NOT_FOUND(HttpStatus.NOT_FOUND, "N404_RECEIVER", "알림 수신자를 찾을 수 없습니다."),
     REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "N404", "알림 요청을 찾을 수 없습니다."),
+    TASK_NOT_FOUND(HttpStatus.NOT_FOUND, "N404_TASK", "알림 작업을 찾을 수 없습니다."),
     DLQ_TASK_NOT_FOUND(HttpStatus.NOT_FOUND, "N404_DLQ", "DLQ 작업을 찾을 수 없습니다."),
     DLQ_REPLAY_NOT_ALLOWED(HttpStatus.CONFLICT, "N409_DLQ_REPLAY", "DLQ 상태에서만 재처리할 수 있습니다."),
     TASK_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "N409_TASK_RETRY", "FAILED 또는 DLQ 상태에서만 즉시 재시도할 수 있습니다."),

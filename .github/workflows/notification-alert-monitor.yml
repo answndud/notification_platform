@@ -71,8 +71,15 @@ jobs:
           DLQ_WARN_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.dlq_warn_threshold || '100' }}
         run: |
           chmod +x scripts/*.sh
-          URL="${NOTIFICATION_METRICS_URL:-http://localhost:8080/api/v1/notifications/metrics}"
-          if [ -n "${{ github.event_name == 'workflow_dispatch' && inputs.metrics_url || '' }}" ]; then
-            URL="${{ github.event_name == 'workflow_dispatch' && inputs.metrics_url || '' }}"
+          URL="${NOTIFICATION_METRICS_URL:-}"
+          MANUAL_URL="${{ github.event_name == 'workflow_dispatch' && inputs.metrics_url || '' }}"
+          if [ -n "$MANUAL_URL" ]; then
+            URL="$MANUAL_URL"
           fi
+
+          if [ -z "$URL" ] && [ -z "$ALERT_TEST_PAYLOAD" ]; then
+            echo "[monitor] skipped: NOTIFICATION_METRICS_URL (or metrics_url input) is not set"
+            exit 0
+          fi
+
           ./scripts/run_alert_monitor.sh "$URL"

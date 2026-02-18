@@ -6,9 +6,13 @@ import com.example.notification.domain.request.dto.NotificationRequestResponse;
 import com.example.notification.domain.request.service.NotificationRequestService;
 import com.example.notification.global.common.ApiPagingPolicy;
 import com.example.notification.global.common.ApiResponse;
+import com.example.notification.global.common.ApiValidationPatterns;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,14 +44,23 @@ public class NotificationRequestController {
         return ApiResponse.ok(requestService.get(id));
     }
 
+    @GetMapping("/by-key")
+    public ApiResponse<NotificationRequestResponse> getByRequestKey(
+            @RequestParam @NotBlank @Size(max = 120) String requestKey
+    ) {
+        return ApiResponse.ok(requestService.getByRequestKey(requestKey));
+    }
+
     @GetMapping
     public ApiResponse<NotificationRequestListResponse> list(
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @Pattern(regexp = ApiValidationPatterns.REQUEST_STATUS) String status,
+            @RequestParam(required = false) @Pattern(regexp = ApiValidationPatterns.PRIORITY) String priority,
+            @RequestParam(required = false) @Size(max = 120) String requestKey,
             @RequestParam(defaultValue = ApiPagingPolicy.DEFAULT_PAGE_VALUE) @Min(ApiPagingPolicy.MIN_PAGE) int page,
             @RequestParam(defaultValue = ApiPagingPolicy.DEFAULT_SIZE_VALUE)
             @Min(ApiPagingPolicy.MIN_SIZE)
             @Max(ApiPagingPolicy.MAX_SIZE) int size
     ) {
-        return ApiResponse.ok(requestService.list(status, page, size));
+        return ApiResponse.ok(requestService.list(status, priority, requestKey, page, size));
     }
 }

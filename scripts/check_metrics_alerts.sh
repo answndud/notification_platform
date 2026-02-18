@@ -93,11 +93,13 @@ try:
     severity_rank = {"OK": 0, "WARNING": 1, "CRITICAL": 2}
     state = {"severity": "OK"}
     reason_details = []
+    reason_events = []
 
     def apply_reason(next_severity, next_reason):
         if severity_rank[next_severity] > severity_rank[state["severity"]]:
             state["severity"] = next_severity
         reason_details.append(next_reason)
+        reason_events.append((next_severity, next_reason))
 
     if request_queued_lag == -1:
         apply_reason("CRITICAL", "lag_unavailable")
@@ -120,9 +122,13 @@ try:
 
     if not reason_details:
         reason_details.append("within_threshold")
+        reason_events.append(("OK", "within_threshold"))
 
     severity = state["severity"]
-    reason = reason_details[0]
+    reason = next(
+        reason for level, reason in reason_events
+        if severity_rank[level] == severity_rank[severity]
+    )
 
     print(json.dumps({
         "severity": severity,

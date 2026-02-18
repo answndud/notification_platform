@@ -48,7 +48,13 @@ class ApiInputValidationWebMvcTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("N400"));
 
-        verify(notificationRequestService, never()).list(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+        verify(notificationRequestService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
     }
 
     @Test
@@ -63,6 +69,26 @@ class ApiInputValidationWebMvcTest {
     }
 
     @Test
+    void taskGetReturns400WhenIdInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/tasks/{id}", 0L))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(deliveryTaskService, never()).get(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    void dlqGetReturns400WhenIdInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/dlq/{id}", 0L))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(dlqService, never()).get(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
     void dlqListReturns400WhenRequestIdNotNumber() throws Exception {
         mockMvc.perform(get("/api/v1/notifications/dlq")
                         .param("requestId", "abc"))
@@ -70,7 +96,14 @@ class ApiInputValidationWebMvcTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("N400"));
 
-        verify(dlqService, never()).getDlqTasks(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+        verify(dlqService, never()).getDlqTasks(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
     }
 
     @Test
@@ -119,41 +152,39 @@ class ApiInputValidationWebMvcTest {
 
     @Test
     void taskListReturns400WhenPriorityInvalid() throws Exception {
-        org.mockito.Mockito.when(deliveryTaskService.list(
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.anyInt(),
-                org.mockito.ArgumentMatchers.anyInt()
-        )).thenThrow(new com.example.notification.global.exception.BusinessException(
-                com.example.notification.global.exception.ErrorCode.INVALID_INPUT
-        ));
-
         mockMvc.perform(get("/api/v1/notifications/tasks")
                         .param("priority", "urgent"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("N400"));
-    }
 
-    @Test
-    void dlqListReturns400WhenChannelInvalid() throws Exception {
-        org.mockito.Mockito.when(dlqService.getDlqTasks(
+        verify(deliveryTaskService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.anyInt(),
                 org.mockito.ArgumentMatchers.anyInt()
-        )).thenThrow(new com.example.notification.global.exception.BusinessException(
-                com.example.notification.global.exception.ErrorCode.INVALID_INPUT
-        ));
+        );
+    }
 
+    @Test
+    void dlqListReturns400WhenChannelInvalid() throws Exception {
         mockMvc.perform(get("/api/v1/notifications/dlq")
                         .param("channel", "sms"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(dlqService, never()).getDlqTasks(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
     }
 
     @Test
@@ -182,5 +213,118 @@ class ApiInputValidationWebMvcTest {
                 .andExpect(jsonPath("$.code").value("N400"));
 
         verify(notificationRequestService, never()).create(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void requestListReturns400WhenPriorityInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/requests")
+                        .param("priority", "urgent"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
+    }
+
+    @Test
+    void createReturns400WhenRequestKeyTooLong() throws Exception {
+        String longRequestKey = "a".repeat(121);
+        String body = "{" +
+                "\"requestKey\":\"" + longRequestKey + "\"," +
+                "\"templateCode\":\"ORDER_PAID\"," +
+                "\"receiverIds\":[1001]," +
+                "\"variables\":{\"orderNo\":\"1\"}," +
+                "\"priority\":\"HIGH\"" +
+                "}";
+
+        mockMvc.perform(post("/api/v1/notifications/requests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).create(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void requestListReturns400WhenStatusInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/requests")
+                        .param("status", "done"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
+    }
+
+    @Test
+    void taskListReturns400WhenStatusInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/tasks")
+                        .param("status", "queued"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(deliveryTaskService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
+    }
+
+    @Test
+    void requestListReturns400WhenRequestKeyTooLong() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/requests")
+                        .param("requestKey", "a".repeat(121)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
+    }
+
+    @Test
+    void requestGetByKeyReturns400WhenBlank() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/requests/by-key")
+                        .param("requestKey", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).getByRequestKey(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void requestGetByKeyReturns400WhenTooLong() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/requests/by-key")
+                        .param("requestKey", "a".repeat(121)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).getByRequestKey(org.mockito.ArgumentMatchers.any());
     }
 }

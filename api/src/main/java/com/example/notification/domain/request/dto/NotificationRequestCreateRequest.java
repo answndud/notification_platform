@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 public record NotificationRequestCreateRequest(
-        @NotBlank String requestKey,
-        @NotBlank String templateCode,
+        @NotBlank @Size(max = 120) String requestKey,
+        @NotBlank @Size(max = 80) String templateCode,
         @NotEmpty @Size(max = 1000) List<@Positive Long> receiverIds,
         Map<String, Object> variables,
         @NotBlank @Pattern(regexp = "(?i)HIGH|NORMAL|LOW") String priority

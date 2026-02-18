@@ -3,8 +3,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-METRICS_URL="${1:-${NOTIFICATION_METRICS_URL:-http://localhost:8080/api/v1/notifications/metrics}}"
+if [ "$#" -ge 1 ]; then
+  METRICS_URL="$1"
+else
+  METRICS_URL="${NOTIFICATION_METRICS_URL:-http://localhost:8080/api/v1/notifications/metrics}"
+fi
 ALERT_TEST_PAYLOAD="${ALERT_TEST_PAYLOAD:-}"
+
+if [ -z "$METRICS_URL" ] && [ -z "$ALERT_TEST_PAYLOAD" ]; then
+  echo "[monitor] skipped: metrics URL and test payload are both empty"
+  exit 0
+fi
 
 if [ -n "$ALERT_TEST_PAYLOAD" ]; then
   payload_type="$(ALERT_TEST_PAYLOAD="$ALERT_TEST_PAYLOAD" python3 - <<'PY'

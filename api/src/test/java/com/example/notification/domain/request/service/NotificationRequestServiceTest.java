@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.example.notification.domain.receiver.repository.ReceiverRepository;
 import com.example.notification.domain.request.dto.NotificationRequestCreateRequest;
+import com.example.notification.domain.request.entity.NotificationRequest;
+import com.example.notification.domain.request.entity.NotificationRequestStatus;
 import com.example.notification.domain.request.producer.NotificationRequestEventProducer;
 import com.example.notification.domain.request.producer.NotificationRequestQueuedEvent;
 import com.example.notification.domain.request.repository.NotificationRequestRepository;
@@ -18,12 +20,15 @@ import com.example.notification.global.exception.BusinessException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationRequestServiceTest {
@@ -120,6 +125,31 @@ class NotificationRequestServiceTest {
     }
 
     @Test
+    void createTrimsRequestKeyAndTemplateCode() {
+        NotificationRequestCreateRequest request = new NotificationRequestCreateRequest(
+                "  order-1234-paid  ",
+                "  ORDER_PAID  ",
+                List.of(1001L, 1002L),
+                Map.of("orderNo", "1234"),
+                "HIGH"
+        );
+        NotificationTemplate template = mock(NotificationTemplate.class);
+        when(requestRepository.existsByRequestKey("order-1234-paid")).thenReturn(false);
+        when(templateRepository.findByTemplateCode("ORDER_PAID")).thenReturn(Optional.of(template));
+        when(template.getEventType()).thenReturn("ORDER");
+        when(receiverRepository.countByIdInAndActiveTrue(request.receiverIds())).thenReturn(2L);
+
+        service.create(request);
+
+        verify(requestRepository).existsByRequestKey("order-1234-paid");
+        verify(templateRepository).findByTemplateCode("ORDER_PAID");
+        ArgumentCaptor<NotificationRequestQueuedEvent> captor = ArgumentCaptor.forClass(NotificationRequestQueuedEvent.class);
+        verify(eventProducer).publish(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().requestKey()).isEqualTo("order-1234-paid");
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().templateCode()).isEqualTo("ORDER_PAID");
+    }
+
+    @Test
     void createThrowsWhenPriorityInvalid() {
         NotificationRequestCreateRequest request = new NotificationRequestCreateRequest(
                 "order-1234-paid",
@@ -172,14 +202,114 @@ class NotificationRequestServiceTest {
 
     @Test
     void listThrowsWhenPageNegative() {
-        assertThatThrownBy(() -> service.list(null, -1, 20))
+        assertThatThrownBy(() -> service.list(null, null, null, -1, 20))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
     void listThrowsWhenSizeOutOfRange() {
-        assertThatThrownBy(() -> service.list(null, 0, 101))
+        assertThatThrownBy(() -> service.list(null, null, null, 0, 101))
                 .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void listThrowsWhenPriorityInvalid() {
+        assertThatThrownBy(() -> service.list(null, "urgent", null, 0, 20))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void listThrowsWhenRequestKeyTooLong() {
+        assertThatThrownBy(() -> service.list(null, null, "a".repeat(121), 0, 20))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void listMapsPriorityInResponse() {
+        NotificationRequest request = mock(NotificationRequest.class);
+        when(request.getId()).thenReturn(1L);
+        when(request.getRequestKey()).thenReturn("order-1");
+        when(request.getPriority()).thenReturn("LOW");
+        when(request.getStatus()).thenReturn(NotificationRequestStatus.QUEUED);
+        when(request.getRequestedAt()).thenReturn(java.time.LocalDateTime.of(2026, 2, 18, 12, 0));
+
+        when(requestRepository.findWithFilters(NotificationRequestStatus.QUEUED, "LOW", "order", PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(request), PageRequest.of(0, 20), 1));
+
+        var response = service.list("queued", "low", "order", 0, 20);
+
+        org.assertj.core.api.Assertions.assertThat(response.items()).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(response.items().getFirst().priority()).isEqualTo("LOW");
+    }
+
+    @Test
+    void getByRequestKeyTrimsInput() {
+        NotificationRequest request = mock(NotificationRequest.class);
+        when(request.getId()).thenReturn(9L);
+        when(request.getRequestKey()).thenReturn("order-9");
+        when(request.getPriority()).thenReturn("HIGH");
+        when(request.getStatus()).thenReturn(NotificationRequestStatus.QUEUED);
+        when(request.getRequestedAt()).thenReturn(java.time.LocalDateTime.of(2026, 2, 18, 13, 0));
+        when(requestRepository.findByRequestKey("order-9")).thenReturn(Optional.of(request));
+
+        var response = service.getByRequestKey("  order-9  ");
+
+        org.assertj.core.api.Assertions.assertThat(response.requestKey()).isEqualTo("order-9");
+        verify(requestRepository).findByRequestKey("order-9");
+    }
+
+    @Test
+    void getByRequestKeyThrowsWhenMissing() {
+        when(requestRepository.findByRequestKey("unknown-key")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getByRequestKey("unknown-key"))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void getByRequestKeyThrowsWhenBlank() {
+        assertThatThrownBy(() -> service.getByRequestKey("   "))
+                .isInstanceOf(BusinessException.class);
+
+        verify(requestRepository, never()).findByRequestKey(any());
+    }
+
+    @Test
+    void listEscapesWildcardCharactersInRequestKeyFilter() {
+        when(requestRepository.findWithFilters(
+                NotificationRequestStatus.QUEUED,
+                "LOW",
+                "order\\%\\_1",
+                PageRequest.of(0, 20)
+        )).thenReturn(Page.empty(PageRequest.of(0, 20)));
+
+        service.list("queued", "low", "order%_1", 0, 20);
+
+        verify(requestRepository).findWithFilters(
+                NotificationRequestStatus.QUEUED,
+                "LOW",
+                "order\\%\\_1",
+                PageRequest.of(0, 20)
+        );
+    }
+
+    @Test
+    void listUsesNullRequestKeyFilterWhenBlank() {
+        when(requestRepository.findWithFilters(
+                null,
+                null,
+                null,
+                PageRequest.of(0, 20)
+        )).thenReturn(Page.empty(PageRequest.of(0, 20)));
+
+        service.list(null, null, "   ", 0, 20);
+
+        verify(requestRepository).findWithFilters(
+                null,
+                null,
+                null,
+                PageRequest.of(0, 20)
+        );
     }
 
     private NotificationRequestCreateRequest request() {

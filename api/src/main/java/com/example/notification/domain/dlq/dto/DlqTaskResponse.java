@@ -8,8 +8,10 @@ public record DlqTaskResponse(
         Long receiverId,
         String channel,
         String priority,
+        String status,
         int retryCount,
         int maxRetry,
+        LocalDateTime nextRetryAt,
         String lastResultCode,
         String lastResultMessage,
         LocalDateTime createdAt
