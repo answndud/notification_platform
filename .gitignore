@@ -35,3 +35,17 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local secrets and env ###
+.env
+.env.*
+*.local
+*.secret
+*.secrets
+
+### Credentials ###
+credentials.json
+service-account*.json
+*key*.pem
+*.p12
+*.jks
