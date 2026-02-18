@@ -104,4 +104,10 @@ class DlqServiceTest {
         assertThatThrownBy(() -> dlqService.getDlqTasks(null, null, "urgent", 0, 20))
                 .isInstanceOf(BusinessException.class);
     }
+
+    @Test
+    void getDlqTasksThrowsWhenChannelInvalid() {
+        assertThatThrownBy(() -> dlqService.getDlqTasks(null, "sms", null, 0, 20))
+                .isInstanceOf(BusinessException.class);
+    }
 }

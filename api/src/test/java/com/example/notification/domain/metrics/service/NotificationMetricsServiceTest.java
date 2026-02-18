@@ -43,6 +43,7 @@ class NotificationMetricsServiceTest {
         when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.DLQ)).thenReturn(1L);
         when(deliveryLogRepository.findAverageLatencyMs()).thenReturn(18.237d);
         when(kafkaLagService.getRequestQueuedLag()).thenReturn(12L);
+        when(kafkaLagService.getMalformedQueuedLag()).thenReturn(3L);
 
         NotificationMetricsResponse response = notificationMetricsService.getMetrics();
 
@@ -52,7 +53,27 @@ class NotificationMetricsServiceTest {
         assertThat(response.failedTasks()).isEqualTo(2L);
         assertThat(response.dlqTasks()).isEqualTo(1L);
         assertThat(response.requestQueuedLag()).isEqualTo(12L);
+        assertThat(response.malformedQueuedLag()).isEqualTo(3L);
         assertThat(response.successRate()).isEqualTo(70.0);
         assertThat(response.averageLatencyMs()).isEqualTo(18.24);
+    }
+
+    @Test
+    void getMetricsHandlesEmptyTotalsAndUnavailableLag() {
+        when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.PENDING)).thenReturn(0L);
+        when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.SENDING)).thenReturn(0L);
+        when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.SENT)).thenReturn(0L);
+        when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.FAILED)).thenReturn(0L);
+        when(deliveryTaskRepository.countByStatus(DeliveryTaskStatus.DLQ)).thenReturn(0L);
+        when(deliveryLogRepository.findAverageLatencyMs()).thenReturn(null);
+        when(kafkaLagService.getRequestQueuedLag()).thenReturn(-1L);
+        when(kafkaLagService.getMalformedQueuedLag()).thenReturn(-1L);
+
+        NotificationMetricsResponse response = notificationMetricsService.getMetrics();
+
+        assertThat(response.successRate()).isEqualTo(0.0);
+        assertThat(response.averageLatencyMs()).isEqualTo(0.0);
+        assertThat(response.requestQueuedLag()).isEqualTo(-1L);
+        assertThat(response.malformedQueuedLag()).isEqualTo(-1L);
     }
 }

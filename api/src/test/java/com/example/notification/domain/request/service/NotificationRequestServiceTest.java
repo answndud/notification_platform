@@ -154,6 +154,23 @@ class NotificationRequestServiceTest {
     }
 
     @Test
+    void createThrowsWhenReceiverIdsDuplicated() {
+        NotificationRequestCreateRequest request = new NotificationRequestCreateRequest(
+                "order-1234-paid",
+                "ORDER_PAID",
+                List.of(1001L, 1001L),
+                Map.of("orderNo", "1234"),
+                "HIGH"
+        );
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(BusinessException.class);
+
+        verify(receiverRepository, never()).countByIdInAndActiveTrue(any());
+        verify(eventProducer, never()).publish(any());
+    }
+
+    @Test
     void listThrowsWhenPageNegative() {
         assertThatThrownBy(() -> service.list(null, -1, 20))
                 .isInstanceOf(BusinessException.class);

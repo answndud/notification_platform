@@ -19,6 +19,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,23 +27,28 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationDeliveryService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationDeliveryService.class);
-    private static final int RETRY_BATCH_SIZE = 50;
 
     private final DeliveryTaskRepository deliveryTaskRepository;
     private final DeliveryLogRepository deliveryLogRepository;
     private final ChannelPolicyRepository channelPolicyRepository;
     private final MockChannelSender mockChannelSender;
+    private final int retryBatchSize;
+    private final long maxBackoffSeconds;
 
     public NotificationDeliveryService(
             DeliveryTaskRepository deliveryTaskRepository,
             DeliveryLogRepository deliveryLogRepository,
             ChannelPolicyRepository channelPolicyRepository,
-            MockChannelSender mockChannelSender
+            MockChannelSender mockChannelSender,
+            @Value("${notification.retry.batch-size:50}") int retryBatchSize,
+            @Value("${notification.retry.max-backoff-seconds:86400}") long maxBackoffSeconds
     ) {
         this.deliveryTaskRepository = deliveryTaskRepository;
         this.deliveryLogRepository = deliveryLogRepository;
         this.channelPolicyRepository = channelPolicyRepository;
         this.mockChannelSender = mockChannelSender;
+        this.retryBatchSize = retryBatchSize > 0 ? retryBatchSize : 50;
+        this.maxBackoffSeconds = maxBackoffSeconds > 0 ? maxBackoffSeconds : 86400;
     }
 
     @Transactional
@@ -90,7 +96,7 @@ public class NotificationDeliveryService {
         List<DeliveryTask> retryTargets = deliveryTaskRepository.findRetryTargetsForUpdate(
                 DeliveryTaskStatus.FAILED.name(),
                 LocalDateTime.now(),
-                RETRY_BATCH_SIZE
+                retryBatchSize
         );
 
         for (DeliveryTask task : retryTargets) {
@@ -225,7 +231,11 @@ public class NotificationDeliveryService {
 
     private LocalDateTime calculateNextRetryAt(DeliveryTask task) {
         int nextAttempt = task.getRetryCount() + 1;
-        long backoffSeconds = (long) task.getBackoffBaseSec() * (1L << (nextAttempt - 1));
+        long backoffSeconds = Math.max(1L, task.getBackoffBaseSec());
+        for (int i = 1; i < nextAttempt && backoffSeconds < maxBackoffSeconds; i++) {
+            long doubled = backoffSeconds > Long.MAX_VALUE / 2 ? Long.MAX_VALUE : backoffSeconds * 2;
+            backoffSeconds = Math.min(maxBackoffSeconds, doubled);
+        }
         return LocalDateTime.now().plusSeconds(backoffSeconds);
     }
 

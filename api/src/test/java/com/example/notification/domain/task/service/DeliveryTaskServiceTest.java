@@ -50,6 +50,12 @@ class DeliveryTaskServiceTest {
     }
 
     @Test
+    void listThrowsWhenChannelInvalid() {
+        assertThatThrownBy(() -> deliveryTaskService.list(null, "sms", null, null, 0, 20))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
     void retryThrowsWhenTaskMissing() {
         when(deliveryTaskRepository.findById(999L)).thenReturn(Optional.empty());
 

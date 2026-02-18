@@ -136,4 +136,51 @@ class ApiInputValidationWebMvcTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("N400"));
     }
+
+    @Test
+    void dlqListReturns400WhenChannelInvalid() throws Exception {
+        org.mockito.Mockito.when(dlqService.getDlqTasks(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt()
+        )).thenThrow(new com.example.notification.global.exception.BusinessException(
+                com.example.notification.global.exception.ErrorCode.INVALID_INPUT
+        ));
+
+        mockMvc.perform(get("/api/v1/notifications/dlq")
+                        .param("channel", "sms"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+    }
+
+    @Test
+    void createReturns400WhenReceiverIdsTooMany() throws Exception {
+        StringBuilder ids = new StringBuilder();
+        for (int i = 1; i <= 1001; i++) {
+            if (i > 1) {
+                ids.append(',');
+            }
+            ids.append(i);
+        }
+
+        String body = "{" +
+                "\"requestKey\":\"order-1\"," +
+                "\"templateCode\":\"ORDER_PAID\"," +
+                "\"receiverIds\":[" + ids + "]," +
+                "\"variables\":{\"orderNo\":\"1\"}," +
+                "\"priority\":\"HIGH\"" +
+                "}";
+
+        mockMvc.perform(post("/api/v1/notifications/requests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("N400"));
+
+        verify(notificationRequestService, never()).create(org.mockito.ArgumentMatchers.any());
+    }
 }

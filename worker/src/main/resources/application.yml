@@ -33,7 +33,10 @@ notification:
       request-queued: notification.request.queued.v1
       request-queued-malformed: notification.request.queued.malformed.v1
   retry:
+    enabled: true
     poll-ms: 5000
+    batch-size: 50
+    max-backoff-seconds: 86400
 
 logging:
   level:

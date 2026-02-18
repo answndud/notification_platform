@@ -19,6 +19,30 @@ on:
         description: "Optional JSON payload to bypass metrics fetch"
         required: false
         type: string
+      lag_warn_threshold:
+        description: "Lag warning threshold override"
+        required: false
+        type: string
+      lag_critical_threshold:
+        description: "Lag critical threshold override"
+        required: false
+        type: string
+      malformed_lag_warn_threshold:
+        description: "Malformed lag warning threshold override"
+        required: false
+        type: string
+      malformed_lag_critical_threshold:
+        description: "Malformed lag critical threshold override"
+        required: false
+        type: string
+      failed_warn_threshold:
+        description: "Failed tasks warning threshold override"
+        required: false
+        type: string
+      dlq_warn_threshold:
+        description: "DLQ tasks warning threshold override"
+        required: false
+        type: string
 
 jobs:
   monitor:
@@ -39,10 +63,12 @@ jobs:
           NOTIFICATION_ALERT_PAGERDUTY_KEY: ${{ secrets.NOTIFICATION_ALERT_PAGERDUTY_KEY }}
           ALERT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
           ALERT_TEST_PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && inputs.test_payload || '' }}
-          LAG_WARN_THRESHOLD: "100"
-          LAG_CRITICAL_THRESHOLD: "1000"
-          FAILED_WARN_THRESHOLD: "200"
-          DLQ_WARN_THRESHOLD: "100"
+          LAG_WARN_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.lag_warn_threshold || '100' }}
+          LAG_CRITICAL_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.lag_critical_threshold || '1000' }}
+          MALFORMED_LAG_WARN_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.malformed_lag_warn_threshold || '20' }}
+          MALFORMED_LAG_CRITICAL_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.malformed_lag_critical_threshold || '100' }}
+          FAILED_WARN_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.failed_warn_threshold || '200' }}
+          DLQ_WARN_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && inputs.dlq_warn_threshold || '100' }}
         run: |
           chmod +x scripts/*.sh
           URL="${NOTIFICATION_METRICS_URL:-http://localhost:8080/api/v1/notifications/metrics}"

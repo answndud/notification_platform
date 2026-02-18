@@ -7,6 +7,7 @@ public record NotificationMetricsResponse(
         long failedTasks,
         long dlqTasks,
         long requestQueuedLag,
+        long malformedQueuedLag,
         double successRate,
         double averageLatencyMs
 ) {

@@ -6,6 +6,7 @@ import com.example.notification.domain.dlq.repository.DeliveryTaskRepository;
 import com.example.notification.domain.task.dto.DeliveryTaskListResponse;
 import com.example.notification.domain.task.dto.DeliveryTaskResponse;
 import com.example.notification.domain.task.dto.DeliveryTaskRetryResponse;
+import com.example.notification.global.common.ApiInputNormalizer;
 import com.example.notification.global.common.PageableFactory;
 import com.example.notification.global.exception.BusinessException;
 import com.example.notification.global.exception.ErrorCode;
@@ -30,8 +31,8 @@ public class DeliveryTaskService {
         Page<DeliveryTask> tasks = deliveryTaskRepository.findWithFilters(
                 taskStatus,
                 requestId,
-                normalizeChannel(channel),
-                normalizePriority(priority),
+                ApiInputNormalizer.normalizeOptionalChannel(channel),
+                ApiInputNormalizer.normalizeOptionalPriority(priority),
                 pageable
         );
 
@@ -85,21 +86,4 @@ public class DeliveryTaskService {
         }
     }
 
-    private String normalizeChannel(String channel) {
-        if (channel == null || channel.isBlank()) {
-            return null;
-        }
-        return channel.trim().toUpperCase();
-    }
-
-    private String normalizePriority(String priority) {
-        if (priority == null || priority.isBlank()) {
-            return null;
-        }
-        String normalized = priority.trim().toUpperCase();
-        return switch (normalized) {
-            case "HIGH", "NORMAL", "LOW" -> normalized;
-            default -> throw new BusinessException(ErrorCode.INVALID_INPUT);
-        };
-    }
 }

@@ -11,6 +11,7 @@ import com.example.notification.domain.request.repository.NotificationRequestRep
 import com.example.notification.domain.receiver.repository.ReceiverRepository;
 import com.example.notification.domain.template.entity.NotificationTemplate;
 import com.example.notification.domain.template.repository.NotificationTemplateRepository;
+import com.example.notification.global.common.ApiInputNormalizer;
 import com.example.notification.global.common.PageableFactory;
 import com.example.notification.global.exception.BusinessException;
 import com.example.notification.global.exception.ErrorCode;
@@ -42,7 +43,7 @@ public class NotificationRequestService {
 
     @Transactional
     public NotificationRequestResponse create(NotificationRequestCreateRequest command) {
-        String normalizedPriority = normalizePriority(command.priority());
+        String normalizedPriority = ApiInputNormalizer.normalizeRequiredPriority(command.priority());
         validateReceiverIds(command.receiverIds());
 
         if (requestRepository.existsByRequestKey(command.requestKey())) {
@@ -51,7 +52,7 @@ public class NotificationRequestService {
         NotificationTemplate template = templateRepository.findByTemplateCode(command.templateCode())
                 .orElseThrow(() -> new BusinessException(ErrorCode.TEMPLATE_NOT_FOUND));
         long activeReceiverCount = receiverRepository.countByIdInAndActiveTrue(command.receiverIds());
-        if (activeReceiverCount != new HashSet<>(command.receiverIds()).size()) {
+        if (activeReceiverCount != command.receiverIds().size()) {
             throw new BusinessException(ErrorCode.RECEIVER_NOT_FOUND);
         }
 
@@ -113,22 +114,15 @@ public class NotificationRequestService {
         if (receiverIds == null || receiverIds.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
+        HashSet<Long> uniqueReceiverIds = new HashSet<>(receiverIds.size());
         for (Long receiverId : receiverIds) {
             if (receiverId == null || receiverId <= 0) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT);
+            }
+            if (!uniqueReceiverIds.add(receiverId)) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT);
             }
         }
     }
 
-    private String normalizePriority(String priority) {
-        if (priority == null || priority.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-
-        String normalized = priority.trim().toUpperCase();
-        return switch (normalized) {
-            case "HIGH", "NORMAL", "LOW" -> normalized;
-            default -> throw new BusinessException(ErrorCode.INVALID_INPUT);
-        };
-    }
 }

@@ -49,7 +49,9 @@ class NotificationDeliveryServiceTest {
                 deliveryTaskRepository,
                 deliveryLogRepository,
                 channelPolicyRepository,
-                mockChannelSender
+                mockChannelSender,
+                50,
+                86400
         );
     }
 
@@ -162,5 +164,50 @@ class NotificationDeliveryServiceTest {
                 .isInstanceOf(NonRetryableEventException.class)
                 .extracting(ex -> ((NonRetryableEventException) ex).getReasonCode())
                 .isEqualTo(NonRetryableReasonCode.INVALID_PRIORITY_VALUE);
+    }
+
+    @Test
+    void processRetryBatchUsesConfiguredBatchSize() {
+        when(deliveryTaskRepository.findRetryTargetsForUpdate(
+                org.mockito.ArgumentMatchers.eq("FAILED"),
+                org.mockito.ArgumentMatchers.any(LocalDateTime.class),
+                org.mockito.ArgumentMatchers.eq(50)
+        )).thenReturn(List.of());
+
+        service.processRetryBatch();
+
+        verify(deliveryTaskRepository).findRetryTargetsForUpdate(
+                org.mockito.ArgumentMatchers.eq("FAILED"),
+                org.mockito.ArgumentMatchers.any(LocalDateTime.class),
+                org.mockito.ArgumentMatchers.eq(50)
+        );
+    }
+
+    @Test
+    void failedSendBackoffIsCappedByConfiguredMax() {
+        service = new NotificationDeliveryService(
+                deliveryTaskRepository,
+                deliveryLogRepository,
+                channelPolicyRepository,
+                mockChannelSender,
+                50,
+                5
+        );
+
+        DeliveryTask existing = DeliveryTask.create(1L, 1001L, "EMAIL", "HIGH", 5, 4, true);
+        existing.markSending();
+        existing.markFailed(LocalDateTime.now().minusSeconds(1));
+
+        when(deliveryTaskRepository.findRetryTargetsForUpdate(
+                org.mockito.ArgumentMatchers.eq("FAILED"),
+                org.mockito.ArgumentMatchers.any(LocalDateTime.class),
+                org.mockito.ArgumentMatchers.eq(50)
+        )).thenReturn(List.of(existing));
+        when(deliveryTaskRepository.save(any(DeliveryTask.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(deliveryLogRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.processRetryBatch();
+
+        assertThat(existing.getNextRetryAt()).isBeforeOrEqualTo(LocalDateTime.now().plusSeconds(5));
     }
 }

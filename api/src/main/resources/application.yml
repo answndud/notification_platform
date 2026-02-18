@@ -21,6 +21,7 @@ notification:
   kafka:
     topics:
       request-queued: notification.request.queued.v1
+      request-queued-malformed: notification.request.queued.malformed.v1
     monitor:
       worker-group-id: notification-worker
 

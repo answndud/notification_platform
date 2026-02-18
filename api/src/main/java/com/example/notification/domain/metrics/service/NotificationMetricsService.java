@@ -32,6 +32,7 @@ public class NotificationMetricsService {
         long failed = deliveryTaskRepository.countByStatus(DeliveryTaskStatus.FAILED);
         long dlq = deliveryTaskRepository.countByStatus(DeliveryTaskStatus.DLQ);
         long requestQueuedLag = kafkaLagService.getRequestQueuedLag();
+        long malformedQueuedLag = kafkaLagService.getMalformedQueuedLag();
 
         long done = sent + failed + dlq;
         double successRate = done == 0 ? 0.0 : ((double) sent / done) * 100.0;
@@ -45,6 +46,7 @@ public class NotificationMetricsService {
                 failed,
                 dlq,
                 requestQueuedLag,
+                malformedQueuedLag,
                 roundTwo(successRate),
                 roundTwo(averageLatencyMs)
         );
