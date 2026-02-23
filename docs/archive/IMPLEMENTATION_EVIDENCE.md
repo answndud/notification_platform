@@ -1,6 +1,6 @@
-# Implementation Evidence (Spring/Kafka)
+# Implementation Evidence (Archived)
 
-This file exists to prevent false conclusions like "only scripts exist".
+이 문서는 루트 정리 과정에서 `docs/archive/`로 이동한 보관본입니다.
 
 ## Where implementation code is
 

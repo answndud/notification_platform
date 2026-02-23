@@ -52,13 +52,14 @@ service-account*.json
 
 ### Workspace docs ###
 AGENT.md
-docs/
+docs/*
+!docs/archive/
+docs/archive/*
+!docs/archive/*.md
 notification-platform-portfolio/
 notification_platform.md
 notification_platform/
 performance-optimization/
-PLAN.md
-PROGRESS.md
 
 ### macOS ###
 .DS_Store

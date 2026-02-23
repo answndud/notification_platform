@@ -1,4 +1,6 @@
-# E2E Smoke Runbook
+# E2E Smoke Runbook (Archived)
+
+이 문서는 루트 정리 과정에서 `docs/archive/`로 이동한 보관본입니다.
 
 ## Goal
 

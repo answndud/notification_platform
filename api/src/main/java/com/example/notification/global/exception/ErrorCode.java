@@ -12,6 +12,7 @@ public enum ErrorCode {
     DLQ_TASK_NOT_FOUND(HttpStatus.NOT_FOUND, "N404_DLQ", "DLQ 작업을 찾을 수 없습니다."),
     DLQ_REPLAY_NOT_ALLOWED(HttpStatus.CONFLICT, "N409_DLQ_REPLAY", "DLQ 상태에서만 재처리할 수 있습니다."),
     TASK_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "N409_TASK_RETRY", "FAILED 또는 DLQ 상태에서만 즉시 재시도할 수 있습니다."),
+    MESSAGE_QUEUE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "N503_MQ", "메시지 큐에 연결할 수 없습니다. Kafka 상태를 확인해 주세요."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "N500", "내부 서버 오류가 발생했습니다.");
 
     private final HttpStatus status;

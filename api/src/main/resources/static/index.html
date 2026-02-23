@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Platform Dashboard</title>
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <div class="bg-shape bg-shape-a"></div>
+  <div class="bg-shape bg-shape-b"></div>
+
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Notification Platform</p>
+      <h1>Operations Dashboard</h1>
+    </div>
+    <div class="topbar-actions">
+      <button id="refresh-all" class="btn">전체 새로고침</button>
+      <span id="api-status" class="status">연결 확인 전</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel metrics-panel">
+      <div class="panel-header">
+        <h2>핵심 지표</h2>
+      </div>
+      <div id="metrics-grid" class="metrics-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>요청 생성</h2>
+      </div>
+      <form id="create-request-form" class="form-grid">
+        <label>
+          Request Key
+          <input name="requestKey" required maxlength="120" placeholder="demo-20260223-001">
+        </label>
+        <label>
+          Template Code
+          <input name="templateCode" required value="ORDER_PAID" maxlength="60">
+        </label>
+        <label>
+          Receiver IDs (쉼표 구분)
+          <input name="receiverIds" required value="1001">
+        </label>
+        <label>
+          Priority
+          <select name="priority">
+            <option>LOW</option>
+            <option selected>HIGH</option>
+          </select>
+        </label>
+        <label class="full-width">
+          Variables (JSON)
+          <textarea name="variables" rows="4">{"orderNo":"A-100","amount":19900}</textarea>
+        </label>
+        <div class="full-width form-actions">
+          <button type="submit" class="btn btn-primary">요청 생성</button>
+        </div>
+      </form>
+      <pre id="create-response" class="output"></pre>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>요청 조회</h2>
+      </div>
+      <div class="toolbar">
+        <label>
+          Request Key
+          <input id="request-key-input" placeholder="demo-20260223-001" maxlength="120">
+        </label>
+        <button id="find-request" class="btn">Key 조회</button>
+        <button id="list-requests" class="btn">최근 요청</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Key</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Requested At</th>
+            </tr>
+          </thead>
+          <tbody id="requests-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Delivery Tasks</h2>
+      </div>
+      <div class="toolbar">
+        <label>
+          Request ID
+          <input id="task-request-id" placeholder="10">
+        </label>
+        <label>
+          Status
+          <select id="task-status">
+            <option value="">전체</option>
+            <option value="PENDING">PENDING</option>
+            <option value="SENDING">SENDING</option>
+            <option value="SENT">SENT</option>
+            <option value="FAILED">FAILED</option>
+          </select>
+        </label>
+        <button id="list-tasks" class="btn">Task 조회</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Request ID</th>
+              <th>Status</th>
+              <th>Channel</th>
+              <th>Retry</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tasks-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>DLQ</h2>
+      </div>
+      <div class="toolbar">
+        <button id="list-dlq" class="btn">DLQ 조회</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Request ID</th>
+              <th>Status</th>
+              <th>Retry</th>
+              <th>Result Code</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dlq-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footnote">
+    <p>API: <code>/api/v1/notifications/*</code> · 한 페이지에서 request/task/dlq/metrics 확인</p>
+  </footer>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>
