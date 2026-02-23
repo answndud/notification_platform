@@ -67,8 +67,22 @@ sequenceDiagram
 1. outbox relay 장애 대응 절차를 설계해보세요.
 2. outbox 정리 배치 정책을 작성해보세요.
 
+## 예제 명령어 검증 시나리오(권장)
+
+사전 조건:
+- `idea3-postgres`, `idea3-kafka` 실행
+
+검증 절차:
+1. `./scripts/verify_kafka_outbox_flow.sh` 실행
+2. outbox `NEW -> SENT` 상태 전이와 Kafka 발행 흐름 확인
+
+성공 기준:
+- outbox 레코드 생성/상태 갱신 성공
+- Kafka 토픽 발행 성공
+- 최종 `SENT` 레코드 수 확인
+
 ## 챕터 체크리스트
 - [x] 초안 작성 완료
-- [ ] 예제 명령어 검증 완료
+- [x] 예제 명령어 검증 완료
 - [x] 초보자 기준 용어 설명 완료
-- [ ] 최종 교정 완료
+- [x] 최종 교정 완료

@@ -59,8 +59,22 @@ Protobuf   : 성능/크기 효율 좋음, 계약 관리 필요
 1. 이벤트 계약 변경 절차 템플릿을 작성해보세요.
 2. 스키마 버전 정책(v1/v2) 롤아웃 계획을 세워보세요.
 
+## 예제 명령어 검증 시나리오(권장)
+
+사전 조건:
+- `docker compose -f docker-compose.idea3.yml -f docker-compose.kafka-sr.yml up -d schema-registry`
+
+검증 절차:
+1. `./scripts/verify_kafka_schema_registry.sh` 실행
+2. subject 등록과 호환성(BACKWARD) 설정 확인
+
+성공 기준:
+- Schema Registry 준비 완료
+- `payment.events-value` subject 등록 완료
+- 호환성 정책 설정 완료
+
 ## 챕터 체크리스트
 - [x] 초안 작성 완료
-- [ ] 예제 명령어 검증 완료
+- [x] 예제 명령어 검증 완료
 - [x] 초보자 기준 용어 설명 완료
-- [ ] 최종 교정 완료
+- [x] 최종 교정 완료

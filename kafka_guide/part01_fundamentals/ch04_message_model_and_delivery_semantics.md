@@ -66,4 +66,4 @@ docker exec -it idea3-kafka kafka-console-consumer --bootstrap-server localhost:
 - [x] 초안 작성 완료
 - [x] 예제 명령어 검증 완료
 - [x] 초보자 기준 용어 설명 완료
-- [ ] 최종 교정 완료
+- [x] 최종 교정 완료

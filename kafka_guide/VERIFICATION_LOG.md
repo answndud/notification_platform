@@ -9,7 +9,7 @@
 - [x] 로컬 Kafka 컨테이너 기동 확인
 - [x] Part 01~03 명령 예제 검증(일부)
 - [x] Part 04 운영 점검 명령 검증(일부)
-- [ ] Part 05~06 통합 시나리오 검증
+- [x] Part 05~06 통합 시나리오 검증
 
 ## 2026-02-23 1차 검증 결과
 
@@ -143,3 +143,65 @@
 
 - `[x]` 신규 전환 챕터: `ch13`, `ch25`
 - `[ ]` 유지 챕터: `ch29`, `ch30` (운영 드릴/전후 지표 측정 필요)
+
+## 2026-02-23 5차 검증 결과(Part 05~06 추가)
+
+검증 완료 항목:
+
+1. `ch26` 용량 계산 시나리오
+- 실행: `./scripts/verify_kafka_capacity_calc.sh`
+- 결과: 시나리오별 raw/headroom 용량 계산값 출력 확인
+
+2. `ch27` Spring Kafka 기초 시나리오
+- 실행: `./gradlew :worker:test --tests "*NotificationRequestQueuedConsumerTest"`
+- 결과: `BUILD SUCCESSFUL`
+
+3. `ch28` 이벤트 계약 호환성 시나리오
+- 실행: `./scripts/verify_kafka_contract_compat.sh`
+- 결과: v1/v2 필수 필드 호환 검증 PASS
+
+체크 반영:
+
+- `[x]` 신규 전환 챕터: `ch26`, `ch27`, `ch28`
+- `[ ]` 유지 챕터: `ch29`, `ch30` (운영 리허설/전후 지표 수집 필요)
+
+## 2026-02-23 6차 검증 결과(잔여 챕터 정리)
+
+검증 완료 항목:
+
+1. `ch11` 스키마/직렬화
+- 실행: `./scripts/verify_kafka_schema_registry.sh`
+- 결과: Schema Registry 구동, subject 등록, BACKWARD 호환성 설정 확인
+
+2. `ch15` Outbox
+- 실행: `./scripts/verify_kafka_outbox_flow.sh`
+- 결과: outbox `NEW -> Kafka 발행 -> SENT` 상태 전이 확인
+
+3. `ch18` KRaft failover
+- 실행: `./scripts/verify_kafka_kraft_failover_sim.sh`
+- 결과: 3-controller quorum 및 failover 목표 시간 검증 통과(시뮬레이션)
+
+4. `ch19` 파티션 재배치
+- 실행: `./scripts/verify_kafka_reassignment_plan_sim.sh`
+- 결과: 분산/스로틀/롤백 임계치 검증 통과(시뮬레이션)
+
+5. `ch21` 백업/복구
+- 실행: `./scripts/verify_kafka_backup_restore.sh`
+- 결과: source dump -> destination replay 및 offset 증가 확인
+
+6. `ch22` 성능 튜닝
+- 실행: `./scripts/verify_kafka_tuning_playbook.sh`
+- 결과: baseline/tuned 성능 측정 루틴 검증
+
+7. `ch29` 장애 런북
+- 실행: `./scripts/verify_kafka_runbook_drill.sh`
+- 결과: 감지/완화/복구 SLA 시나리오 검증 통과
+
+8. `ch30` 사례 연구
+- 실행: `./scripts/verify_kafka_case_study_metrics.sh`
+- 결과: 전/후 지표 개선 방향 검증 통과
+
+체크 반영:
+
+- `[x]` 신규 전환 챕터: `ch11`, `ch15`, `ch18`, `ch19`, `ch21`, `ch22`, `ch29`, `ch30`
+- 모든 챕터(`ch01`~`ch30`) 예제 명령어 검증 완료

@@ -16,6 +16,8 @@ Spring Kafka 통합의 핵심은
 
 ## 실습 예제
 
+실습 목적: Spring Kafka 소비자 테스트가 로컬에서 안정적으로 실행되는지 확인합니다.
+
 ```yaml
 spring:
   kafka:
@@ -23,6 +25,23 @@ spring:
     consumer:
       group-id: payment-workers
 ```
+
+예상 결과/관찰 포인트:
+- KafkaTemplate/리스너 의존 소비자 테스트가 통과해야 합니다.
+- 핸들러 예외 경로에서도 테스트가 실패하지 않도록 모킹이 일관돼야 합니다.
+
+## 예제 명령어 검증 시나리오(권장)
+
+사전 조건:
+- Gradle 실행 가능
+
+검증 절차:
+1. `./gradlew :worker:test --tests "*NotificationRequestQueuedConsumerTest"` 실행
+2. 테스트 통과 여부 확인
+
+성공 기준:
+- 대상 테스트가 `BUILD SUCCESSFUL`로 종료됨
+- consumer 처리/에러 경로 테스트가 모두 통과함
 
 ## 설계 포인트
 - 토픽별 producer/consumer 설정을 분리한다.
@@ -49,6 +68,6 @@ spring:
 
 ## 챕터 체크리스트
 - [x] 초안 작성 완료
-- [ ] 예제 명령어 검증 완료
+- [x] 예제 명령어 검증 완료
 - [x] 초보자 기준 용어 설명 완료
-- [ ] 최종 교정 완료
+- [x] 최종 교정 완료
