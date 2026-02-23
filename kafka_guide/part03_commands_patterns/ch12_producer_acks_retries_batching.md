@@ -14,6 +14,20 @@
 - `retries`: 일시 오류 재전송 횟수
 - `batch.size`, `linger.ms`: 처리량과 지연의 균형
 
+## 직관 그림
+
+```text
+지연 최소화 우선:
+  linger.ms 낮음, batch 작음 -> 빠른 전송, 처리량 낮을 수 있음
+
+처리량 우선:
+  linger.ms 높음, batch 큼 -> 묶음 전송, 지연 증가 가능
+```
+
+초보자 실무 팁:
+- 먼저 안정성(acks/retries)을 맞추고,
+- 그 다음 처리량(batch/linger/compression)을 조정합니다.
+
 ## 실습 예제
 
 ```bash
@@ -38,6 +52,10 @@ compression.type=lz4
 ## 요약
 - Producer 튜닝은 도메인별로 달라야 한다.
 - 안정성/지연/비용 균형을 명시적으로 선택해야 한다.
+
+## 초보자 체크
+- acks, retries, linger.ms를 각각 왜 조정하는지 말할 수 있는가?
+- 튜닝 전 baseline 지표 3개를 정할 수 있는가?
 
 ## 연습문제
 ### 기초

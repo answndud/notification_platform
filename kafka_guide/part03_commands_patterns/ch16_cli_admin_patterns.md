@@ -13,6 +13,23 @@
 CLI는 장애 대응 속도를 크게 좌우합니다.
 평소 점검 루틴이 없으면 장애 중 잘못된 명령으로 피해가 커질 수 있습니다.
 
+## 직관 구분
+
+```text
+읽기 전용 점검 명령:
+  - kafka-topics --list/--describe
+  - kafka-consumer-groups --describe
+
+변경성 명령:
+  - kafka-configs --alter
+  - offset reset
+  - topic delete
+```
+
+초보자에게 중요한 원칙:
+- 장애 중에는 "읽기 명령"부터 실행하고,
+- 변경 명령은 승인/기록 후 실행합니다.
+
 ## 실습 예제
 
 ```bash
@@ -34,6 +51,10 @@ docker exec -it idea3-kafka kafka-consumer-groups --bootstrap-server localhost:9
 ## 요약
 - CLI 운영 표준은 장애 예방 장치다.
 - 변경성 명령은 통제 절차가 필수다.
+
+## 초보자 체크
+- 점검 명령과 변경 명령을 구분해 말할 수 있는가?
+- 변경 명령 실행 전 필수 확인 항목 3개를 말할 수 있는가?
 
 ## 연습문제
 ### 기초

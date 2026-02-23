@@ -15,6 +15,25 @@
 Outbox 패턴은 DB 트랜잭션 안에 이벤트를 함께 기록하고,
 별도 프로세스가 Kafka로 안전하게 발행하는 방식입니다.
 
+## 직관 그림
+
+```mermaid
+sequenceDiagram
+  participant API
+  participant DB
+  participant Relay as Outbox Relay
+  participant Kafka
+
+  API->>DB: 업무 데이터 + outbox 레코드 저장(같은 트랜잭션)
+  Relay->>DB: NEW outbox 조회
+  Relay->>Kafka: 이벤트 발행
+  Relay->>DB: 상태 SENT 갱신
+```
+
+핵심 해석:
+- "업무 저장"과 "이벤트 기록"을 같은 DB 트랜잭션에 묶어
+  이중 쓰기 정합성 리스크를 낮춥니다.
+
 ## 실습 예제
 
 ```text
@@ -34,6 +53,10 @@ Outbox 패턴은 DB 트랜잭션 안에 이벤트를 함께 기록하고,
 ## 요약
 - Outbox는 이중 쓰기 정합성 문제를 줄이는 실전 패턴이다.
 - 테이블 설계와 relay 운영이 성공 요인이다.
+
+## 초보자 체크
+- 이중 쓰기 실패가 왜 생기는지 말할 수 있는가?
+- outbox relay 실패 시 재처리 흐름을 설명할 수 있는가?
 
 ## 연습문제
 ### 기초

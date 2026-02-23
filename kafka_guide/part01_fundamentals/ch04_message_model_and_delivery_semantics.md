@@ -16,6 +16,19 @@
 
 실무 기본은 at-least-once + idempotent 소비자입니다.
 
+## 직관 그림
+
+```mermaid
+flowchart LR
+  P[Producer] --> B[(Kafka Broker)] --> C[Consumer]
+  C -->|처리 성공 후 커밋| O[(Offset Commit)]
+  C -.실패/재시도.-> C
+```
+
+핵심 해석:
+- 커밋 시점이 너무 빠르면 유실 위험이 커집니다.
+- 커밋 시점이 늦으면 중복 처리 가능성이 커집니다.
+
 ## 실습 예제
 
 ```bash
@@ -35,6 +48,10 @@ docker exec -it idea3-kafka kafka-console-consumer --bootstrap-server localhost:
 ## 요약
 - 전달 보장은 비즈니스 요구와 비용의 균형 문제다.
 - 보장 수준만큼 소비자 설계도 중요하다.
+
+## 초보자 체크
+- at-most / at-least / exactly-once 차이를 예시로 설명할 수 있는가?
+- "중복은 언제 생기고, 어떻게 막을지"를 말할 수 있는가?
 
 ## 연습문제
 ### 기초

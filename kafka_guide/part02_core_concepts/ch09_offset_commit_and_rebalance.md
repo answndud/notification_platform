@@ -17,6 +17,23 @@ Offset은 "어디까지 처리했는가"의 기준입니다.
 Rebalance는 컨슈머 그룹 구성 변경 시 파티션 재할당 과정입니다.
 재할당 중 처리 지연/중단 구간이 발생할 수 있습니다.
 
+## 직관 그림
+
+```mermaid
+sequenceDiagram
+  participant C1 as Consumer-1
+  participant C2 as Consumer-2
+  participant G as Group Coordinator
+
+  C1->>G: JoinGroup
+  C2->>G: JoinGroup
+  G-->>C1: 파티션 할당(P0)
+  G-->>C2: 파티션 할당(P1)
+  Note over C1,C2: 새 컨슈머 추가/장애 시 Rebalance 발생
+  G-->>C1: 재할당
+  G-->>C2: 재할당
+```
+
 ## 실습 예제
 
 ```bash
@@ -36,6 +53,10 @@ docker exec -it idea3-kafka kafka-consumer-groups --bootstrap-server localhost:9
 ## 요약
 - offset 정책은 데이터 정합성과 직결된다.
 - rebalance는 정상 동작이지만, 통제하지 않으면 지연 원인이 된다.
+
+## 초보자 체크
+- 커밋 시점이 빠를 때/늦을 때 위험을 말할 수 있는가?
+- rebalance 발생 트리거 3가지를 나열할 수 있는가?
 
 ## 연습문제
 ### 기초

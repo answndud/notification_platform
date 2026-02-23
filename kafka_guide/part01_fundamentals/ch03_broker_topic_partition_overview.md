@@ -17,6 +17,24 @@
 파티션 확장은 처리량을 높이지만,
 순서는 파티션 단위로만 보장됩니다.
 
+## 직관 그림
+
+```text
+Producer --> Topic(order.events)
+                 |- Partition 0
+                 |- Partition 1
+                 |- Partition 2
+
+Consumer Group A
+  - Consumer A1 -> P0
+  - Consumer A2 -> P1
+  - Consumer A3 -> P2
+```
+
+핵심 해석:
+- 파티션은 병렬 처리 단위입니다.
+- 그룹 내에서는 같은 파티션을 동시에 두 소비자가 읽지 않습니다.
+
 ## 실습 예제
 
 ```bash
@@ -37,6 +55,10 @@ docker exec -it idea3-kafka kafka-topics --bootstrap-server localhost:9092 --des
 ## 요약
 - 파티션은 Kafka 확장성의 핵심이다.
 - 처리량과 순서 요구를 동시에 고려해야 한다.
+
+## 초보자 체크
+- Broker/Topic/Partition을 각각 1문장으로 설명할 수 있는가?
+- "파티션 수 < 컨슈머 수"일 때 무슨 일이 생기는지 말할 수 있는가?
 
 ## 연습문제
 ### 기초

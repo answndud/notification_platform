@@ -13,6 +13,20 @@
 같은 그룹의 컨슈머는 파티션을 분담해 읽습니다.
 파티션 수가 컨슈머 수보다 적으면 일부 컨슈머는 유휴 상태가 됩니다.
 
+## 직관 그림
+
+```text
+Topic payment.events.v1 (Partitions: 0,1,2)
+
+Group: payment-workers
+  Consumer-1 -> P0
+  Consumer-2 -> P1
+  Consumer-3 -> P2
+
+Consumer-4 추가 시:
+  Consumer-4 -> (할당 없음, idle)
+```
+
 ## 실습 예제
 
 ```bash
@@ -34,6 +48,10 @@ docker exec -it idea3-kafka kafka-consumer-groups --bootstrap-server localhost:9
 ## 요약
 - Consumer Group은 Kafka 확장성과 복원성의 중심이다.
 - 파티션 수와 소비자 수의 관계를 항상 함께 봐야 한다.
+
+## 초보자 체크
+- "같은 그룹"과 "다른 그룹" 소비 차이를 설명할 수 있는가?
+- idle consumer가 생기는 조건을 설명할 수 있는가?
 
 ## 연습문제
 ### 기초
