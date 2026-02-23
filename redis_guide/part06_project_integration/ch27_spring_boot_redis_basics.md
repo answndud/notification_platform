@@ -22,6 +22,26 @@ Spring 통합에서 초보자가 가장 많이 겪는 문제는
 2. 값 포맷(String/JSON/바이너리)
 3. TTL 기본 정책
 
+## 직관 그림
+
+```mermaid
+flowchart LR
+  C[Controller/Service] --> R1[StringRedisTemplate]
+  C --> R2[RedisTemplate<K,V>]
+  R1 --> D[Redis]
+  R2 --> D
+```
+
+```text
+선택 기준
+- 토큰/카운터/단순 문자열: StringRedisTemplate
+- 객체 저장/복합 구조: RedisTemplate + 직렬화 규약
+```
+
+핵심 해석:
+- 템플릿 선택보다 중요한 것은 "팀 단일 직렬화 규칙"입니다.
+- 같은 키를 다른 포맷으로 읽지 않게 경계를 고정해야 합니다.
+
 ### 템플릿 선택
 
 - `StringRedisTemplate`: 문자열 중심, 토큰/카운터에 단순
@@ -72,6 +92,11 @@ spring:
 
 - Spring Redis 통합의 핵심은 연결 자체보다 직렬화 표준화다.
 - 템플릿/포맷/폴백 정책을 함께 설계해야 안정적이다.
+
+## 초보자 체크
+
+- `StringRedisTemplate`과 `RedisTemplate`을 어떤 기준으로 나눌지 설명할 수 있는가?
+- 직렬화 규칙이 없을 때 실제로 어떤 장애가 나는지 예시를 말할 수 있는가?
 
 ## 연습문제
 
