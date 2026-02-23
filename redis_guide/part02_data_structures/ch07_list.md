@@ -25,6 +25,20 @@ List만으로는 운영 부담이 커질 수 있습니다.
 - `LRANGE`
 - `BLPOP`, `BRPOP`
 
+## 직관 그림
+
+```text
+RPUSH queue:email msg1 msg2 msg3
+
+head -> [msg1] [msg2] [msg3] <- tail
+         LPOP  -> msg1
+```
+
+```text
+BLPOP queue:email 5
+  5초 동안 대기하다가 데이터가 오면 즉시 반환
+```
+
 ## 실습 예제
 
 ```bash
@@ -63,6 +77,10 @@ redis-cli -p 6380 BLPOP queue:email 5
 - List는 순서 기반 단순 큐 패턴에 적합하다.
 - 운영에서는 길이 관리와 실패 재처리 전략이 필수다.
 - 보장 수준이 높아질수록 Streams/브로커와 비교해야 한다.
+
+## 초보자 체크
+- `LPOP`과 `RPOP` 차이를 말할 수 있는가?
+- `BLPOP`이 왜 "대기형 소비"인지 설명할 수 있는가?
 
 ## 연습문제
 

@@ -29,6 +29,25 @@ Sentinel 핵심 역할:
 - failover 실행
 - 클라이언트에 새 primary 정보 제공
 
+## 직관 그림
+
+```mermaid
+flowchart LR
+  P[Primary] --> R[Replica]
+  S1[Sentinel-1]
+  S2[Sentinel-2]
+  S3[Sentinel-3]
+  S1 --> P
+  S2 --> P
+  S3 --> P
+  P -.장애.-> F[Failover]
+  F --> N[새 Primary 선출]
+```
+
+핵심 해석:
+- Sentinel은 데이터를 저장하는 노드가 아니라 감시/전환 제어 노드입니다.
+- 다수 Sentinel 합의(ODOWN) 후 failover가 진행됩니다.
+
 ### Sentinel 동작을 이해하는 최소 용어
 
 - SDOWN(subjectively down): 개별 Sentinel이 장애라고 판단한 상태
@@ -94,6 +113,10 @@ redis-cli -p 6380 INFO replication
 - 복제는 읽기 확장과 고가용성의 기본 축이다.
 - Sentinel은 장애 감지와 자동 전환의 제어면이다.
 - 운영 안정성은 설정값보다 테스트 리허설이 만든다.
+
+## 초보자 체크
+- SDOWN/ODOWN 차이를 설명할 수 있는가?
+- 왜 Sentinel을 홀수 노드로 구성하는지 말할 수 있는가?
 
 ## 연습문제
 

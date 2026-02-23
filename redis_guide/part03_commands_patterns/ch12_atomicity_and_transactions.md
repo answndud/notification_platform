@@ -42,6 +42,25 @@ Redis 명령 원자성만으로는 완전한 일관성을 보장할 수 없습�
 - 백오프 간격
 - 최종 실패 시 사용자/호출자 응답 규약
 
+## 직관 그림
+
+```mermaid
+sequenceDiagram
+  participant A as Client A
+  participant B as Client B
+  participant R as Redis
+
+  A->>R: WATCH stock:1
+  A->>R: MULTI
+  B->>R: DECRBY stock:1 1
+  A->>R: EXEC
+  R-->>A: nil (충돌로 실패)
+```
+
+핵심 해석:
+- `WATCH` 구간에서 값이 바뀌면 `EXEC`가 실패할 수 있습니다.
+- 실패는 이상이 아니라 "충돌 감지 성공"입니다.
+
 ## 실습 예제
 
 주의: `WATCH/MULTI/EXEC`는 같은 연결 세션에서 실행해야 의미가 있습니다.
@@ -97,6 +116,10 @@ EOF
 - Redis 단일 명령은 원자적이다.
 - 복합 갱신은 `MULTI/EXEC` 또는 스크립트로 제어한다.
 - 충돌 처리 정책이 없으면 일관성 이슈가 발생한다.
+
+## 초보자 체크
+- 왜 `WATCH` 실패 시 재시도가 필요한지 설명할 수 있는가?
+- 단일 명령으로 해결 가능한 케이스를 구분할 수 있는가?
 
 ## 연습문제
 

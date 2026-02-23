@@ -29,6 +29,24 @@ Redis에서는 RDB와 AOF 조합으로 내구성 수준을 조절합니다.
 - `everysec`: 일반적 균형점
 - `no`: OS에 위임, 성능은 좋지만 손실 위험 큼
 
+## 직관 비교
+
+```text
+appendfsync always   -> 손실 최소, 쓰기 지연 증가 가능
+appendfsync everysec -> 균형점(실무 기본)
+appendfsync no       -> 성능 우선, 손실 위험 증가
+```
+
+```mermaid
+flowchart LR
+  A[쓰기 요청] --> B[메모리 반영]
+  B --> C[AOF 기록]
+  C --> D{fsync 정책}
+  D --> E[always]
+  D --> F[everysec]
+  D --> G[no]
+```
+
 운영에서 꼭 이해할 기술 포인트:
 
 - AOF rewrite와 RDB snapshot은 fork 기반으로 동작할 수 있어,
@@ -73,6 +91,10 @@ redis-cli -p 6380 INFO persistence
 
 - 내구성은 설정 값이 아니라 복구 목표로 결정해야 한다.
 - RDB/AOF 선택은 데이터 성격과 SLA에 맞춰 조합한다.
+
+## 초보자 체크
+- RPO/RTO를 각각 1문장으로 설명할 수 있는가?
+- `everysec`를 기본으로 시작하는 이유를 말할 수 있는가?
 
 ## 연습문제
 

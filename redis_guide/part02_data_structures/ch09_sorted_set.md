@@ -23,6 +23,21 @@ Sorted Set의 강점은 "정렬된 조회"를 별도 인덱스 없이 바로 수
 - `ZRANGE`, `ZREVRANGE`
 - `ZRANK`, `ZREVRANK`
 
+## 직관 그림
+
+```text
+ZADD rank:game 120 user1 200 user2 180 user3
+
+score 내림차순 조회:
+1) user2 (200)
+2) user3 (180)
+3) user1 (120)
+```
+
+핵심 해석:
+- 정렬 기준은 score입니다.
+- score가 같으면 멤버 문자열 순서가 영향을 줄 수 있습니다.
+
 ## 실습 예제
 
 ```bash
@@ -61,6 +76,10 @@ score 설계 실무 팁:
 - Sorted Set은 정렬 + 조회를 동시에 제공하는 강력한 자료형이다.
 - 랭킹, 타임라인, 우선순위 큐에 특히 유용하다.
 - score 규칙과 키 분할 정책이 품질을 좌우한다.
+
+## 초보자 체크
+- `ZRANGE`와 `ZREVRANGE` 차이를 설명할 수 있는가?
+- 랭킹 토픽에서 score 단위 통일이 왜 중요한지 말할 수 있는가?
 
 ## 연습문제
 
