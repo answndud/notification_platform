@@ -86,3 +86,60 @@
 ## 메모
 
 - 멀티 브로커/KRaft 실습은 별도 토폴로지 필요
+
+## 2026-02-23 문서 보강 반영 후 상태 동기화
+
+- 보강 챕터: `ch13`, `ch20`, `ch25`, `ch29`, `ch30`
+- 검증 상태 반영:
+  - `[x]` 유지: `ch20` (consumer group lag 점검 명령 검증 이력 존재)
+  - `[ ]` 유지: `ch13`, `ch25`, `ch29`, `ch30` (통합/보안/사례형 검증 시나리오 필요)
+- 확장 보강 챕터: `ch22`, `ch26`, `ch28` (예제/실패 점검 템플릿 추가, 실실행 검증은 보류)
+
+## 2026-02-23 3차 검증 시도(보강 챕터 기준)
+
+실행 환경:
+
+- `docker compose -f docker-compose.idea3.yml up -d` 성공
+- 컨테이너: `idea3-kafka`
+
+검증 시도 결과:
+
+1. `ch25` ACL 시나리오
+- 실행: `kafka-acls --add/--list/--remove`
+- 결과: `SecurityDisabledException: No Authorizer is configured`
+- 판단: 현재 토폴로지는 Authorizer 비활성 상태로 ACL 실검증 불가
+
+2. `ch13` EOS 시나리오
+- 확인: 레포 내 트랜잭션 producer 샘플/테스트 경로 부재
+- 판단: `transactional.id` 기반 전송 검증은 별도 샘플 앱 필요
+
+3. `ch29`, `ch30` 런북/사례 시나리오
+- 확인: 문서형 검증 절차는 추가 완료
+- 판단: 온콜 드릴/전후 지표 수집을 위한 운영 리허설 슬롯 필요
+
+체크 반영:
+
+- `[x]` 신규 전환 없음
+- `[ ]` 유지 챕터: `ch13`, `ch25`, `ch29`, `ch30`
+
+## 2026-02-23 4차 검증 결과(보강 챕터 재검증)
+
+실행 환경:
+
+- 기본 브로커: `idea3-kafka` (`localhost:9092`)
+- 보안 브로커(ACL 검증 전용): `docker-compose.kafka-sec.yml`의 `idea3-kafka-sec` (`localhost:19092`)
+
+검증 완료 항목:
+
+1. `ch13` EOS 시나리오(샘플 스크립트 기반)
+- 실행: `./scripts/verify_kafka_eos.sh`
+- 결과: `kafka-producer-perf-test` 트랜잭션 전송 성공, `read_uncommitted`/`read_committed` 샘플 소비 확인
+
+2. `ch25` ACL 시나리오(Authorizer 활성화 브로커)
+- 실행: `./scripts/verify_kafka_acl.sh`
+- 결과: ACL add/list/remove 전 과정 성공 확인
+
+체크 반영:
+
+- `[x]` 신규 전환 챕터: `ch13`, `ch25`
+- `[ ]` 유지 챕터: `ch29`, `ch30` (운영 드릴/전후 지표 측정 필요)

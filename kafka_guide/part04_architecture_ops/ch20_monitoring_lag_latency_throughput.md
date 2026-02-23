@@ -17,10 +17,64 @@ Kafka 운영의 핵심 지표:
 - Under-replicated partitions
 - Request error rate
 
+## 권장 임계치(시작점)
+
+| 지표 | 경고(Warning) | 심각(Critical) | 기본 대응 |
+|---|---|---|---|
+| Consumer lag | 5분 연속 증가 | 15분 연속 증가 또는 급증 | 소비자 상태/처리시간 점검 |
+| p95 end-to-end latency | 평시 대비 2배 | 평시 대비 3배 | 병목 구간 분리(생산/소비/외부) |
+| Request error rate | 1% 초과 | 5% 초과 | 인증/권한/네트워크 우선 점검 |
+| Under-replicated partitions | 1개 이상 3분 지속 | 1개 이상 10분 지속 | 브로커/ISR 상태 복구 |
+
+주의:
+- 숫자는 정답이 아니라 시작값입니다.
+- 서비스 트래픽과 SLO 기준으로 분기마다 보정합니다.
+
 ## 실습 예제
+
+실습 목적: lag 급등 상황에서 원인 분해 순서를 고정합니다.
 
 ```bash
 docker exec -it idea3-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group payment-workers
+```
+
+예상 결과/관찰 포인트:
+- `LAG`가 증가 중인지, 정체인지, 감소 중인지 먼저 분류합니다.
+- 특정 파티션만 튀면 hot partition 가능성을 의심합니다.
+- 모든 파티션이 함께 증가하면 소비자 공통 병목 가능성이 큽니다.
+
+## 5분 트리아지 순서
+
+1. 생산 급증 여부 확인
+- produce throughput 급증과 lag 상승이 동시에 나타나는지 확인
+
+2. 소비 저하 여부 확인
+- 컨슈머 재시작, rebalance, 처리시간 증가 여부 확인
+
+3. 외부 의존 장애 확인
+- DB/API timeout 증가와 소비 지연의 동시 발생 여부 확인
+
+4. 인프라 이상 확인
+- under-replicated partitions, 브로커 에러율 확인
+
+5. 즉시 완화 선택
+- 일시적 소비자 증설, 비핵심 트래픽 제한, 재시도 완화
+
+## 알림 문구 템플릿
+
+내부(온콜/개발팀):
+```text
+[Kafka 경보][Sev2] payment-workers lag 15분 증가 중
+- 영향: 결제 이벤트 처리 지연(최대 4분)
+- 조치: 소비자 2->4 증설, 외부 API timeout 점검 중
+- 다음 업데이트: 10분 후
+```
+
+비즈니스/운영 공지:
+```text
+현재 일부 비동기 처리 지연이 발생하고 있습니다.
+핵심 기능 가용성은 유지 중이며, 지연 구간을 완화하는 조치를 진행하고 있습니다.
+다음 상태 업데이트는 10분 내 공유하겠습니다.
 ```
 
 ## 설계 포인트
