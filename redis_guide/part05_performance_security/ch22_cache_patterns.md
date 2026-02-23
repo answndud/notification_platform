@@ -16,6 +16,38 @@ Redis는 저장소이고, Read-through/Write-through/Write-behind는
 대부분 애플리케이션/미들웨어 계층에서 구현되는 접근 패턴입니다.
 즉 "Redis 기능"이라기보다 "시스템 설계 방식"입니다.
 
+## 직관 비교
+
+```text
+Cache-Aside   : 읽기 미스 시 앱이 DB 조회 후 캐시 저장
+Read-Through  : 캐시 계층이 DB 조회를 대행
+Write-Through : 쓰기를 캐시+DB에 동기 반영
+Write-Behind  : 캐시에 먼저 쓰고 DB 반영 지연
+```
+
+```mermaid
+sequenceDiagram
+  participant U as User/API
+  participant A as App
+  participant C as Redis Cache
+  participant D as DB
+
+  U->>A: 조회 요청
+  A->>C: GET
+  alt cache hit
+    C-->>A: value
+  else cache miss
+    A->>D: SELECT
+    D-->>A: value
+    A->>C: SET EX
+  end
+  A-->>U: 응답
+```
+
+핵심 해석:
+- 초반에는 Cache-Aside가 가장 단순하고 운영 난이도가 낮습니다.
+- 복잡한 패턴은 "필요한 병목 구간"에만 국소 적용하는 것이 안전합니다.
+
 ### Cache-Aside
 
 - 애플리케이션이 캐시 miss 시 DB 조회 후 캐시에 저장
@@ -89,6 +121,11 @@ else:
 
 - 캐시 패턴은 정답이 아니라 트레이드오프 선택이다.
 - 트래픽, 일관성, 장애 전략을 함께 보고 선택해야 한다.
+
+## 초보자 체크
+
+- Cache-Aside에서 stale 데이터가 생기는 전형적 경로를 설명할 수 있는가?
+- Write-Through와 Write-Behind의 장애 리스크 차이를 말할 수 있는가?
 
 ## 연습문제
 
