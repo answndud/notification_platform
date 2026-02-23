@@ -27,6 +27,17 @@ redis-cli -p 6380 SLOWLOG GET 10
 
 Slowlog는 느린 명령 패턴을 찾는 데 유용합니다.
 
+보조 진단 명령(권장):
+
+```bash
+redis-cli -p 6380 LATENCY LATEST
+redis-cli -p 6380 LATENCY DOCTOR
+redis-cli -p 6380 MEMORY STATS
+```
+
+`SLOWLOG`는 "느린 명령" 관점,
+`LATENCY`는 "지연 이벤트" 관점이라 함께 보는 것이 좋습니다.
+
 ## 지연 분석 순서
 
 1. 증상 확인: API p95 상승 구간 식별

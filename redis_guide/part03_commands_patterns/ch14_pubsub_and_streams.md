@@ -40,17 +40,33 @@ Streams는 "메시지 로그"를 보관하므로
 
 Pub/Sub:
 
+터미널 A(구독자):
+
 ```bash
 redis-cli -p 6380 SUBSCRIBE alarm:channel
+```
+
+터미널 B(발행자):
+
+```bash
 redis-cli -p 6380 PUBLISH alarm:channel "hello"
 ```
+
+주의: `SUBSCRIBE`는 블로킹 명령이므로 같은 터미널에서 다음 명령이 이어서 실행되지 않습니다.
 
 Streams:
 
 ```bash
 redis-cli -p 6380 XADD stream:order * orderId 1001 status created
 redis-cli -p 6380 XRANGE stream:order - +
+redis-cli -p 6380 XGROUP CREATE stream:order cg1 0 MKSTREAM
+redis-cli -p 6380 XREADGROUP GROUP cg1 c1 COUNT 10 STREAMS stream:order >
 ```
+
+관찰 포인트:
+
+- Pub/Sub는 구독 중이던 연결만 메시지를 즉시 수신합니다.
+- Streams는 메시지 로그를 보관하고 소비 그룹 단위로 처리 상태를 추적할 수 있습니다.
 
 ## 설계 포인트
 

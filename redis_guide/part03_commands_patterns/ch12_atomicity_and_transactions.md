@@ -44,13 +44,35 @@ Redis 명령 원자성만으로는 완전한 일관성을 보장할 수 없습�
 
 ## 실습 예제
 
+주의: `WATCH/MULTI/EXEC`는 같은 연결 세션에서 실행해야 의미가 있습니다.
+명령마다 새 `redis-cli` 프로세스를 띄우면 `WATCH` 상태가 이어지지 않습니다.
+
 ```bash
-redis-cli -p 6380 SET balance:user:1 100
-redis-cli -p 6380 WATCH balance:user:1
-redis-cli -p 6380 MULTI
-redis-cli -p 6380 DECRBY balance:user:1 10
-redis-cli -p 6380 EXEC
+redis-cli -p 6380
+SET balance:user:1 100
+WATCH balance:user:1
+MULTI
+DECRBY balance:user:1 10
+EXEC
 ```
+
+또는 한 번의 세션으로 실행:
+
+```bash
+redis-cli -p 6380 <<'EOF'
+SET balance:user:1 100
+WATCH balance:user:1
+MULTI
+DECRBY balance:user:1 10
+EXEC
+EOF
+```
+
+관찰 포인트:
+
+- `MULTI` 이후 명령은 즉시 실행되지 않고 큐에 쌓입니다.
+- `EXEC` 시점에 원자적으로 적용됩니다.
+- `WATCH` 대상 키가 변경되면 `EXEC`는 실패(`nil` 응답)할 수 있습니다.
 
 ## 설계 포인트
 

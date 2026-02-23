@@ -11,6 +11,11 @@
 
 ## 핵심 패턴
 
+먼저 경계부터 분명히 해야 합니다.
+Redis는 저장소이고, Read-through/Write-through/Write-behind는
+대부분 애플리케이션/미들웨어 계층에서 구현되는 접근 패턴입니다.
+즉 "Redis 기능"이라기보다 "시스템 설계 방식"입니다.
+
 ### Cache-Aside
 
 - 애플리케이션이 캐시 miss 시 DB 조회 후 캐시에 저장

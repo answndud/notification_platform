@@ -24,6 +24,8 @@ Lua 스크립트는 여러 Redis 명령을 서버 내부에서 한 번에 실행
 - `EVALSHA`
 
 Redis 7에서는 Functions로 재사용 가능한 서버 함수 관리도 가능합니다.
+Functions는 스크립트 조각을 반복 전송하지 않고,
+서버에 라이브러리 형태로 등록해 호출할 수 있다는 점이 핵심입니다.
 
 ## 실습 예제
 
@@ -36,6 +38,20 @@ redis-cli -p 6380 EVAL "return redis.call('INCR', KEYS[1])" 1 metric:api:count
 ```bash
 redis-cli -p 6380 EVAL "if redis.call('EXISTS', KEYS[1]) == 1 then return redis.call('INCRBY', KEYS[1], ARGV[1]) else return -1 end" 1 stock:item:1 3
 ```
+
+Functions 예시(Redis 7+):
+
+```bash
+redis-cli -p 6380 FUNCTION LOAD "#!lua name=libmath\nredis.register_function('incrby_safe', function(keys, args)\n  if redis.call('EXISTS', keys[1]) == 0 then return -1 end\n  return redis.call('INCRBY', keys[1], tonumber(args[1]))\nend)"
+redis-cli -p 6380 SET stock:item:2 10
+redis-cli -p 6380 FCALL incrby_safe 1 stock:item:2 3
+redis-cli -p 6380 FCALL incrby_safe 1 stock:item:404 3
+```
+
+관찰 포인트:
+
+- 서버에 등록된 함수는 `FCALL`로 재사용됩니다.
+- 반환 규약(예: `-1`)을 통일하면 애플리케이션 예외 처리가 쉬워집니다.
 
 ## 설계 포인트
 

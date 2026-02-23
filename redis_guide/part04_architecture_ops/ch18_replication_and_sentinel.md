@@ -56,6 +56,19 @@ redis-cli -p 6380 INFO replication
 2. 애플리케이션 재연결 성공 여부
 3. 장애 중 쓰기/읽기 실패율 변화
 
+최소 재현 토폴로지(학습용):
+
+1. Primary 1 + Replica 1 + Sentinel 3 구성
+2. Sentinel quorum 2로 설정
+3. Primary 프로세스 중단 후 failover 시간 측정
+4. 애플리케이션이 새 Primary로 자동 재연결되는지 확인
+
+검증 산출물 권장:
+
+- 전환 소요 시간(초)
+- 전환 중 실패 요청 수
+- 전환 후 데이터 유실 여부(최근 쓰기 샘플)
+
 ## 설계 포인트
 
 - Sentinel 자체도 다중 노드로 구성
